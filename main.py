@@ -14,6 +14,7 @@
   避免 LLM 面前出现重复工具；未安装时一切照旧。
 """
 
+import inspect
 from core.plugin import BasePlugin, logger, on, Priority, register
 from core.chat.message_utils import KiraMessageBatchEvent, KiraMessageEvent
 from core.chat import KiraIMMessage, User, Group, Session, MessageChain
@@ -1284,14 +1285,40 @@ class GroupManagerPlugin(BasePlugin):
         # ask_master / auto：合成事件到对应群会话，触发 LLM 决策
         return await self._emit_group_event(adapter_name, adapter, group_id, group_name, info_text)
 
+    async def _adapter_elements(self, adapter) -> list:
+        """取适配器可输出元素清单（双世代，特征识别不绑版本号）。
+        3.0：IMCapability.get_message_metadata().supported_elements；
+        2.x：适配器 message_types 属性（3.0 上为 deprecated 兼容别名，能跑但刷告警）。"""
+        try:
+            get_cap = getattr(adapter, "get_capability", None)
+            if get_cap is not None:
+                from core.adapter import IMCapability  # 仅 3.0 能力架构存在
+                im = get_cap(IMCapability)
+                if im is not None:
+                    meta = im.get_message_metadata()
+                    meta = await meta if inspect.isawaitable(meta) else meta
+                    elems = getattr(meta, "supported_elements", None)
+                    if elems is not None:
+                        return list(elems)
+        except Exception:
+            pass
+        return list(getattr(adapter, "message_types", []) or [])
+
     async def _emit_group_event(self, adapter_name: str, adapter,
                                 group_id: str, group_name: str, text: str) -> bool:
         """按 02-patterns §2 合成群消息事件（覆盖 session + 带 Group + is_mentioned）"""
         try:
             t = int(time.time())
+            _elements = await self._adapter_elements(adapter)
+            try:
+                _params = set(inspect.signature(KiraMessageEvent.__init__).parameters)
+            except Exception:
+                _params = {"message_types"}
+            _ekw = ({"supported_elements": _elements} if "supported_elements" in _params
+                    else {"message_types": _elements})
             event = KiraMessageEvent(
                 adapter=adapter.info,
-                message_types=adapter.message_types,
+                **_ekw,
                 message=KiraIMMessage(
                     timestamp=t,
                     sender=User(user_id="system_join_request", nickname="加群申请"),
