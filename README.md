@@ -205,6 +205,9 @@ notify_only 直接私聊主人。用户也可以随时自然语言问 Bot"有没
 <details>
 <summary>点击展开</summary>
 
+### v1.2.5（2026-10-12）
+- 3.0 兼容：加群申请事件构造双世代化——`supported_elements`/`message_types` 按构造签名实测分流；元素清单优先 IMCapability 元数据、回退旧属性，不再刷 deprecated 告警；2.x 行为不变。
+
 ### v1.2.4（2026-10-08）
 - 修复：`group_list_essence` 正文为空——各协议端精华列表返回形态不一，现全部兼容：
   - NapCat / 新版 SnowLuma：`content` 段数组（原有支持，非文本段不再静默丢弃，渲染为 `[图片]`/`[表情]` 等占位符）
