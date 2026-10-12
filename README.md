@@ -3,6 +3,12 @@
 
 为 KiraAI 提供群聊管理功能，支持禁言、踢人、设置名片、群公告、精华消息、专属头衔、加群申请审批、成员变动感知等。
 
+## 兼容性
+
+支持 KiraAI 2.x 与 3.0 全系列（含 v3.0.0-rc.1；特征识别，不绑版本号）。
+v1.2.5：加群申请的事件构造改用 3.0 的 `supported_elements` 字段名（按构造签名实测分流，2.x 仍用
+`message_types`）；元素清单优先读 3.0 的 `IMCapability.get_message_metadata()` 元数据，回退旧属性。
+
 ## 功能特性
 
 ### 核心功能（默认启用）
@@ -198,6 +204,9 @@ notify_only 直接私聊主人。用户也可以随时自然语言问 Bot"有没
 
 <details>
 <summary>点击展开</summary>
+
+### v1.2.5（2026-10-12）
+- 3.0 兼容：加群申请事件构造双世代化——`supported_elements`/`message_types` 按构造签名实测分流；元素清单优先 IMCapability 元数据、回退旧属性，不再刷 deprecated 告警；2.x 行为不变。
 
 ### v1.2.4（2026-10-08）
 - 修复：`group_list_essence` 正文为空——各协议端精华列表返回形态不一，现全部兼容：
